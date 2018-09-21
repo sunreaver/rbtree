@@ -28,7 +28,7 @@ func NewRBTree(less func(k1, k2 interface{}) bool) *RBTree {
 func (r *RBTree) Insert(k, v interface{}) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.insert(r.root, k, v)
+	r.root, _ = r.insert(r.root, k, v)
 	r.root.red = false
 	r.length++
 }
@@ -67,12 +67,6 @@ func (r *RBTree) ShowTree(graphName string) string {
 
 // insert 插入
 func (r *RBTree) insert(insertAt *node, k, v interface{}) (n *node, newNode bool) {
-	defer func() {
-		if insertAt == r.root && r.root != n {
-			r.root = n
-		}
-	}()
-
 	if insertAt == nil {
 		n = &node{
 			k:   k,
@@ -111,13 +105,12 @@ func (r *RBTree) Remove(k interface{}) (ok bool) {
 
 func (r *RBTree) delete(delNode *node, k interface{}) (new *node, ok bool) {
 	// 核心，保证每个被检查的节点都为红
-	if r.less(k, delNode.k) {
+	if delNode == nil {
+		return nil, false
+	} else if r.less(k, delNode.k) {
 		// 左删除
-		if delNode.left != nil {
-			// 左存在
-			delNode = delNode.moveRed2Left()
-			delNode.left, ok = r.delete(delNode.left, k)
-		}
+		delNode = delNode.moveRed2Left()
+		delNode.left, ok = r.delete(delNode.left, k)
 	} else {
 		if r.equal(delNode.k, k) {
 			// 删当前
@@ -155,4 +148,11 @@ func (r *RBTree) delete(delNode *node, k interface{}) (new *node, ok bool) {
 		return delNode.fixUp(), true
 	}
 	return delNode, false
+}
+
+// Keys 获取rb树所有key
+func (r *RBTree) Keys() []interface{} {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	return r.root.keys()
 }

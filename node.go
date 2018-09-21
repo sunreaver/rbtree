@@ -101,11 +101,9 @@ func (n *node) fixUp() *node {
 		return nil
 	}
 	tmp := n
+	// 一下三个if次序不能乱
+	// 因为他们从上到下，依次会造成新状态
 
-	// 左右是红色，变色
-	if tmp.left.isRed() && tmp.right.isRed() {
-		tmp = tmp.colorFlip()
-	}
 	// 右边是红色，左旋
 	if tmp.right.isRed() {
 		tmp = n.leftRotate()
@@ -113,6 +111,10 @@ func (n *node) fixUp() *node {
 	// 左边是连续红色，右旋
 	if tmp.left.isRed() && tmp.left.left.isRed() {
 		tmp = tmp.rightRotate()
+	}
+	// 左右是红色，变色
+	if tmp.left.isRed() && tmp.right.isRed() {
+		tmp = tmp.colorFlip()
 	}
 	return tmp
 }
@@ -177,4 +179,19 @@ func (n *node) min() *node {
 		tmp = tmp.left
 	}
 	return tmp
+}
+
+// keys 获取节点下所有keys
+func (n *node) keys() []interface{} {
+	var out []interface{}
+	if n.left != nil {
+		left := n.left.keys()
+		out = append(out, left...)
+	}
+	if n.right != nil {
+		right := n.right.keys()
+		out = append(out, right...)
+	}
+	out = append(out, n.k)
+	return out
 }
