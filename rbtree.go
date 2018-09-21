@@ -61,8 +61,8 @@ func (r *RBTree) get(n *node, k interface{}) (interface{}, bool) {
 }
 
 // ShowTree 打印key结构
-func (r *RBTree) ShowTree() string {
-	return fmt.Sprintf("digraph edge_settings {\n%s\n}", r.root.showDotFormat())
+func (r *RBTree) ShowTree(graphName string) string {
+	return fmt.Sprintf("digraph %s {\n%s\n}", graphName, r.root.showDotFormat())
 }
 
 // insert 插入
@@ -94,4 +94,65 @@ func (r *RBTree) insert(insertAt *node, k, v interface{}) (n *node, newNode bool
 		return insertAt.fixUp(), true
 	}
 	return insertAt, false
+}
+
+func (r *RBTree) equal(k1, k2 interface{}) bool {
+	return !r.less(k1, k2) && !r.less(k2, k1)
+}
+
+// Remove 删除k键
+func (r *RBTree) Remove(k interface{}) (ok bool) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.root, ok = r.delete(r.root, k)
+	r.root.red = false
+	return
+}
+
+func (r *RBTree) delete(delNode *node, k interface{}) (new *node, ok bool) {
+	// 核心，保证每个被检查的节点都为红
+	if r.less(k, delNode.k) {
+		// 左删除
+		if delNode.left != nil {
+			// 左存在
+			delNode = delNode.moveRed2Left()
+			delNode.left, ok = r.delete(delNode.left, k)
+		}
+	} else {
+		if r.equal(delNode.k, k) {
+			// 删当前
+			if delNode.right == nil {
+				// 直接删
+				return delNode.left, true
+			}
+			// 走右删除逻辑
+			// 根据情况，把当前delNode变红
+			if delNode.left.isRed() {
+				delNode = delNode.rightRotate()
+			} else {
+				delNode = delNode.moveRed2Right()
+			}
+			// 删除delNode.right
+			smallest := delNode.right.min()
+			delNode.k = smallest.k
+			delNode.v = smallest.v
+			// 问题改为了：删除右节点的最小节点
+			delNode.right = delNode.right.deleteMin()
+			ok = true
+		} else {
+			// 大于、右删除
+			// 根据情况，把当前delNode变红
+			if delNode.left.isRed() {
+				delNode = delNode.rightRotate()
+			} else {
+				delNode = delNode.moveRed2Right()
+			}
+			delNode.right, ok = r.delete(delNode.right, k)
+		}
+	}
+	if ok {
+		// 有删除，才重新平衡
+		return delNode.fixUp(), true
+	}
+	return delNode, false
 }

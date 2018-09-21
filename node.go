@@ -116,3 +116,65 @@ func (n *node) fixUp() *node {
 	}
 	return tmp
 }
+
+func (n *node) moveRed2Right() *node {
+	tmp := n
+	// 右存在
+	// 右为黑
+	// 右左为黑
+	// 不判断右右，因为我们是默认LLRB
+	if tmp.right != nil && !tmp.right.isRed() && !tmp.right.left.isRed() {
+		tmp = tmp.colorFlip()
+		if tmp.left != nil && tmp.left.left.isRed() {
+			tmp = tmp.rightRotate()
+			tmp = tmp.colorFlip()
+		}
+	}
+	return tmp
+}
+
+func (n *node) deleteMax() *node {
+	tmp := n
+	if tmp.right == nil {
+		return nil
+	}
+	if tmp.left.isRed() {
+		tmp = tmp.rightRotate()
+	}
+	tmp.right = tmp.moveRed2Right()
+	tmp.right = tmp.right.deleteMax()
+	return tmp.fixUp()
+}
+
+func (n *node) moveRed2Left() *node {
+	tmp := n
+	if n.left != nil && !n.left.isRed() && !n.left.left.isRed() {
+		tmp := tmp.colorFlip()
+		if tmp.right.left.isRed() {
+			tmp.right = tmp.right.rightRotate()
+			tmp = tmp.leftRotate()
+			tmp = tmp.colorFlip()
+		}
+	}
+	return tmp
+}
+
+func (n *node) deleteMin() *node {
+	tmp := n
+	if tmp.left == nil {
+		return nil
+	}
+	// 此处不进行右红判断
+	// 因为我们是默认LLRB
+	tmp = tmp.moveRed2Left()
+	tmp.left = tmp.left.deleteMin()
+	return tmp.fixUp()
+}
+
+func (n *node) min() *node {
+	tmp := n
+	for tmp.left != nil {
+		tmp = tmp.left
+	}
+	return tmp
+}
