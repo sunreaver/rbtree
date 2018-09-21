@@ -125,3 +125,19 @@ func TestInsert(t *testing.T) {
 		})
 	})
 }
+
+func TestRemove(t *testing.T) {
+	Convey("remove", t, func() {
+		Convey("remove", func() {
+			randTree.Insert(-1, 100)
+			v, ok := randTree.Get(-1)
+			So(ok, ShouldBeTrue)
+			So(v, ShouldEqual, 100)
+			ok = randTree.Remove(-1)
+			So(ok, ShouldBeTrue)
+			v, ok = randTree.Get(-1)
+			So(ok, ShouldBeFalse)
+			So(v, ShouldBeNil)
+		})
+	})
+}
