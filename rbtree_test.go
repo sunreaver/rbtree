@@ -2,15 +2,15 @@ package rbtree
 
 import (
 	"math/rand"
+	"sync"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
-	tree *RBTree
-	data = []int{0, 2, 26, 33, 15, 59, 78, 47, 89, 94, 90, 81, 107, 137, 133, 156, 159, 147, 106, 189, 199, 194, 205, 211, 241, 237, 266, 258, 202, 162, 287, 318, 300, 336, 353, 356, 376, 355, 324, 408, 420, 413, 387, 274, 429, 445, 433, 451, 447, 463, 485, 466, 456, 503, 511, 510, 538, 528, 495, 541, 552, 561, 546, 577, 598, 623, 605, 563, 643, 703, 694, 718, 721, 705, 631, 540, 425, 737, 783, 746, 828, 843, 831, 790, 878, 887, 891, 940, 888, 953, 996, 957, 947, 847, 728}
+	randTree *RBTree
+	verify   *sync.Map
 )
 
 func compare(k1, k2 interface{}) bool {
@@ -23,10 +23,13 @@ func compare(k1, k2 interface{}) bool {
 }
 
 func TestMain(t *testing.T) {
-	tree = NewRBTree(compare)
-	rand.Seed(time.Now().UnixNano())
-	for _, v := range data {
-		tree.Insert(v, rand.Intn(0xffffffff))
+	verify = &sync.Map{}
+	randTree = NewRBTree(compare)
+	for index := 0; index < 10000; index++ {
+		k := rand.Intn(0xffffffff)
+		v := rand.Intn(0xffffffff)
+		randTree.Insert(k, v)
+		verify.Store(k, v)
 	}
 }
 
@@ -93,23 +96,32 @@ func TestInsert(t *testing.T) {
 		// 定律1 每个节点红or黑
 		Convey("root is black", func() {
 			// 定律2 根黑
-			So(tree.root.isRed(), ShouldBeFalse)
+			So(randTree.root.isRed(), ShouldBeFalse)
 		})
 		Convey("leaf is black", func() {
 			// 定律3 叶节点黑
-			leafIsBlack(tree.root)
+			leafIsBlack(randTree.root)
 		})
 		Convey("red sons is black", func() {
 			// 定律4 如果节点是红，它的两个子节点都黑
-			redSonsIsBlack(tree.root)
+			redSonsIsBlack(randTree.root)
 		})
 		Convey("black is equal", func() {
 			// 定律5 每个节点到其子孙节点的所有路径上黑节点数目相等
-			blackIsEqual(tree.root, 1)
+			blackIsEqual(randTree.root, 1)
 		})
 		Convey("no right red", func() {
 			// LLRB 验证，不存在右红节点
-			noRightRed(tree.root)
+			noRightRed(randTree.root)
+		})
+		Convey("value ok", func() {
+			// 所有值得存储正确
+			verify.Range(func(k, v interface{}) bool {
+				v0, ok := randTree.Get(k)
+				So(ok, ShouldBeTrue)
+				So(v0, ShouldEqual, v)
+				return true
+			})
 		})
 	})
 }
