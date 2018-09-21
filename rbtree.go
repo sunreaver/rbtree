@@ -7,7 +7,7 @@ import (
 
 // RBTree 红黑树
 type RBTree struct {
-	lock   sync.Mutex
+	lock   sync.RWMutex
 	root   *node
 	length int
 	less   func(k1, k2 interface{}) bool
@@ -20,7 +20,7 @@ func NewRBTree(less func(k1, k2 interface{}) bool) *RBTree {
 	}
 	return &RBTree{
 		less: less,
-		lock: sync.Mutex{},
+		lock: sync.RWMutex{},
 	}
 }
 
@@ -40,6 +40,8 @@ func (r *RBTree) Len() int {
 
 // Get 获取
 func (r *RBTree) Get(k interface{}) (interface{}, bool) {
+	r.lock.RLock()
+	r.lock.RUnlock()
 	return r.get(r.root, k)
 }
 
